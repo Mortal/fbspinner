@@ -33,3 +33,8 @@ if your kernel is out of date or does not have this option, you should consider 
    If you use Intel graphics, also append `i915.fastboot=1`.
 
 7. Reboot!
+
+TODO
+----
+
+Parse output of `FBIOGET_VSCREENINFO` properly to detect non-BGRA framebuffer.
