@@ -9,10 +9,9 @@ use std::{fmt, fs, io, result, thread, time};
 
 #[derive(Debug)]
 pub enum ErrorKind {
-    CompressionUnknown(u32),
     Io(io::Error),
     UnexpectedEof,
-    VersionIsZero,
+    ExpectedEof,
 }
 
 #[derive(Debug)]
@@ -41,10 +40,9 @@ impl From<io::Error> for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.kind {
-            ErrorKind::CompressionUnknown(c) => write!(f, "Unknown compression {}", c),
             ErrorKind::Io(ref e) => write!(f, "{}", e),
             ErrorKind::UnexpectedEof => write!(f, "Unexpected end-of-file"),
-            ErrorKind::VersionIsZero => write!(f, "Version is 0"),
+            ErrorKind::ExpectedEof => write!(f, "Expected end-of-file"),
         }
     }
 }
@@ -60,19 +58,46 @@ fn read_u32<R: io::Read>(r: &mut R) -> Result<u32> {
     )
 }
 
-fn main() {
-    let mut animdata = fs::File::open("anim.bin").unwrap();
-    let nframes = read_u32(&mut animdata).unwrap() as usize;
-    let height = read_u32(&mut animdata).unwrap() as usize;
-    let width = read_u32(&mut animdata).unwrap() as usize;
-    let bpp = read_u32(&mut animdata).unwrap() as usize;
+fn read_frames(mut animdata: fs::File) -> Result<(usize, usize, usize, Vec<u8>, usize)> {
+    let nframes = read_u32(&mut animdata)? as usize;
+    let height = read_u32(&mut animdata)? as usize;
+    let width = read_u32(&mut animdata)? as usize;
+    let bpp = read_u32(&mut animdata)? as usize;
     let frame_size = height * width * bpp;
     let mut frames = vec![0; nframes * frame_size];
     let mut decoder = ZlibDecoder::new(animdata);
-    decoder.read_exact(&mut frames).unwrap();
-    assert_eq!(0, decoder.read(&mut [0]).unwrap());
+    decoder.read_exact(&mut frames)?;
+    if decoder.read(&mut [0])? != 0 {
+        return Err(ErrorKind::ExpectedEof.into());
+    }
+    Ok((nframes, height, width, frames, frame_size))
+}
 
-    let mut fb = framebuffer::Framebuffer::new("/dev/fb0").unwrap();
+fn main() {
+    let animdata = match fs::File::open("anim.bin") {
+        Ok(f) => f,
+        Err(e) => {
+            println!("Could not open anim.bin ({})", e);
+            return;
+        }
+    };
+
+    let (nframes, height, width, frames, frame_size) = match read_frames(animdata) {
+        Ok(x) => x,
+        Err(e) => {
+            println!("anim.bin is in the wrong format ({})", e);
+            return;
+        }
+    };
+
+    let mut fb = match framebuffer::Framebuffer::new("/dev/fb0") {
+        Ok(fb) => fb,
+        Err(e) => {
+            println!("Could not open /dev/fb0 ({})", e);
+            return;
+        }
+    };
+
     let mut writer = fb.writer(width, height);
     let dur = time::Duration::from_millis(1000 / 30);
     loop {
