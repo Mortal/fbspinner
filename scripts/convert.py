@@ -5,7 +5,31 @@ import re
 import numpy as np
 from imageio import imread, imwrite
 
-from convertlib import lib as convertlib
+try:
+    import convertlib
+except ImportError:
+    import cffi
+
+    ffibuilder = cffi.FFI()
+    ffibuilder.set_source(
+        "convertlib",
+        """
+    #include <linux/fb.h>
+    #include <sys/ioctl.h>
+
+    int getfbdims(int fbfd) {
+        struct fb_var_screeninfo vinfo;
+        if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo) == -1) {
+            return -1;
+        }
+        return (vinfo.yres << 17) + (vinfo.xres << 2) + (vinfo.bits_per_pixel / 8 % 4);
+    };
+    """,
+    )
+    ffibuilder.cdef("int getfbdims(int fd);")
+    ffibuilder.compile(verbose=True)
+
+    import convertlib
 
 
 def parse_geometry(s):
@@ -48,7 +72,7 @@ def get_dimensions(fp, geometry):
     else:
         if geometry:
             print("Ignoring --geometry")
-        pixels, bpp = divmod(convertlib.getfbdims(fp.fileno()), 4)
+        pixels, bpp = divmod(convertlib.lib.getfbdims(fp.fileno()), 4)
         if bpp == 0:
             bpp = 4
         height, width = divmod(pixels, 2 ** 15)
