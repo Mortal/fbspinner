@@ -1,6 +1,6 @@
 # Maintainer: Mathias Rav <m@git.strova.dk>
 pkgname=fbspinner
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 pkgdesc="Show a spinner on the framebuffer during system boot"
 arch=('i686' 'x86_64')
