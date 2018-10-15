@@ -81,7 +81,7 @@ fn main() {
     decoder.read_exact(&mut frames).unwrap();
     assert_eq!(0, decoder.read(&mut [0]).unwrap());
 
-    let mut fb = framebuffer::Framebuffer::new("/dev/fb0");
+    let mut fb = framebuffer::Framebuffer::new("/dev/fb0").unwrap();
     let mut writer = fb.writer(width, height);
     let dur = time::Duration::from_millis(1000 / 30);
     loop {

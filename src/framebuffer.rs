@@ -1,27 +1,19 @@
-//!Simple linux framebuffer abstraction.
-//!Examples can be found [here](https://github.com/Roysten/rust-framebuffer/tree/master/examples).
+//!Simple Linux framebuffer abstraction.
 
 extern crate libc;
-extern crate memmap;
 
 use libc::ioctl;
 
 use std::error::Error;
 use std::fmt;
+use std::io;
 use std::fs::{File, OpenOptions};
-use std::io::Write;
+use std::io::{Seek, Write};
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
 
-use memmap::{Mmap, Protection};
-
 const FBIOGET_VSCREENINFO: libc::c_ulong = 0x4600;
-const FBIOPUT_VSCREENINFO: libc::c_ulong = 0x4601;
 const FBIOGET_FSCREENINFO: libc::c_ulong = 0x4602;
-
-const KDSETMODE: libc::c_ulong = 0x4B3A;
-const KD_TEXT: libc::c_ulong = 0x00;
-const KD_GRAPHICS: libc::c_ulong = 0x01;
 
 ///Bitfield which is a part of VarScreeninfo.
 #[repr(C)]
@@ -107,12 +99,6 @@ impl ::std::default::Default for FixScreeninfo {
     }
 }
 
-///Enum that can be used to set the current KdMode.
-pub enum KdMode {
-    Graphics = KD_GRAPHICS as isize,
-    Text = KD_TEXT as isize,
-}
-
 ///Kind of errors that can occur when dealing with the Framebuffer.
 #[derive(Debug)]
 pub enum FramebufferErrorKind {
@@ -135,7 +121,7 @@ impl FramebufferError {
     }
 }
 
-impl std::error::Error for FramebufferError {
+impl Error for FramebufferError {
     fn description(&self) -> &str {
         &self.details
     }
@@ -147,58 +133,65 @@ impl fmt::Display for FramebufferError {
     }
 }
 
-impl std::convert::From<std::io::Error> for FramebufferError {
-    fn from(err: std::io::Error) -> FramebufferError {
+impl From<io::Error> for FramebufferError {
+    fn from(err: io::Error) -> FramebufferError {
         FramebufferError::new(FramebufferErrorKind::IoError, err.description())
     }
 }
 
-///Struct that should be used to work with the framebuffer. Direct usage of `frame` should not be
-///necessary.
+///Struct that should be used to work with the framebuffer.
 #[derive(Debug)]
 pub struct Framebuffer {
     pub device: File,
-    pub frame: Mmap,
     pub var_screen_info: VarScreeninfo,
     pub fix_screen_info: FixScreeninfo,
 }
 
+pub struct FbWriter<'a> {
+    fb: &'a mut Framebuffer,
+    offset: usize,
+    width: usize,
+    height: usize,
+}
+
 impl Framebuffer {
     pub fn new<P: AsRef<Path>>(path_to_device: P) -> Result<Framebuffer, FramebufferError> {
-        let device = try!(
-            OpenOptions::new()
+        let device = OpenOptions::new()
                 .read(true)
                 .write(true)
-                .open(path_to_device)
-        );
+                .open(path_to_device)?;
 
-        let var_screen_info = try!(Framebuffer::get_var_screeninfo(&device));
-        let fix_screen_info = try!(Framebuffer::get_fix_screeninfo(&device));
+        let var_screen_info = Framebuffer::get_var_screeninfo(&device)?;
+        let fix_screen_info = Framebuffer::get_fix_screeninfo(&device)?;
 
-        let frame_length = (fix_screen_info.line_length * var_screen_info.yres) as usize;
-        let frame = Mmap::open_with_offset(&device, Protection::ReadWrite, 0, frame_length);
-        match frame {
-            Ok(frame_result) => Ok(Framebuffer {
-                device,
-                frame: frame_result,
-                var_screen_info,
-                fix_screen_info,
-            }),
-            Err(_) => Err(FramebufferError::new(
-                FramebufferErrorKind::IoError,
-                &format!(
-                    "Could not map memory! Mem start: {} Mem stop: {}",
-                    0, frame_length
-                ),
-            )),
+        Ok(Framebuffer {
+            device,
+            var_screen_info,
+            fix_screen_info,
+        })
+    }
+
+    ///Prepares writing a sprite of the given size.
+    pub fn writer(&mut self, width: usize, height: usize) -> FbWriter {
+        let x = (self.var_screen_info.xres as usize - width) / 2;
+        let y = (self.var_screen_info.yres as usize - height) * 4 / 5;
+        let bytes_per_pixel = self.var_screen_info.bits_per_pixel as usize / 8;
+        let offset =
+            (y + self.var_screen_info.yoffset as usize) *
+            self.fix_screen_info.line_length as usize +
+            (x + self.var_screen_info.xoffset as usize) *
+            bytes_per_pixel;
+        FbWriter {
+            fb: self,
+            offset: offset,
+            width: width * bytes_per_pixel,
+            height: height,
         }
     }
 
-    ///Writes a frame to the Framebuffer.
-    pub fn write_frame(&mut self, frame: &[u8]) {
-        unsafe { self.frame.as_mut_slice() }
-            .write_all(frame)
-            .unwrap();
+    fn write(&mut self, offset: usize, data: &[u8]) -> io::Result<()> {
+        self.device.seek(io::SeekFrom::Start(offset as u64))?;
+        self.device.write_all(data)
     }
 
     ///Creates a FixScreeninfo struct and fills it using ioctl.
@@ -226,29 +219,17 @@ impl Framebuffer {
             _ => Ok(info),
         }
     }
+}
 
-    pub fn put_var_screeninfo(
-        device: &File,
-        screeninfo: &VarScreeninfo,
-    ) -> Result<i32, FramebufferError> {
-        match unsafe { ioctl(device.as_raw_fd(), FBIOPUT_VSCREENINFO, &screeninfo) } {
-            -1 => Err(FramebufferError::new(
-                FramebufferErrorKind::IoctlFailed,
-                "Ioctl returned -1",
-            )),
-            ret => Ok(ret),
+impl<'a> FbWriter<'a> {
+    pub fn write(&mut self, frame: &[u8]) -> io::Result<()> {
+        let mut offset = self.offset;
+        let mut input = 0;
+        for _ in 0..self.height {
+            self.fb.write(offset, &frame[input..input+self.width])?;
+            input += self.width;
+            offset += self.fb.fix_screen_info.line_length as usize;
         }
-    }
-
-    ///Sets the tty graphics mode. Make sure to change it back to KdMode::Text after the program is
-    ///done!
-    pub fn set_kd_mode(kd_mode: KdMode) -> Result<i32, FramebufferError> {
-        match unsafe { ioctl(0, KDSETMODE, kd_mode) } {
-            -1 => Err(FramebufferError::new(
-                FramebufferErrorKind::IoctlFailed,
-                "Ioctl returned -1",
-            )),
-            ret => Ok(ret),
-        }
+        Ok(())
     }
 }
