@@ -6,8 +6,8 @@ use libc::ioctl;
 
 use std::error::Error;
 use std::fmt;
-use std::io;
 use std::fs::{File, OpenOptions};
+use std::io;
 use std::io::{Seek, Write};
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
@@ -157,9 +157,9 @@ pub struct FbWriter<'a> {
 impl Framebuffer {
     pub fn new<P: AsRef<Path>>(path_to_device: P) -> Result<Framebuffer, FramebufferError> {
         let device = OpenOptions::new()
-                .read(true)
-                .write(true)
-                .open(path_to_device)?;
+            .read(true)
+            .write(true)
+            .open(path_to_device)?;
 
         let var_screen_info = Framebuffer::get_var_screeninfo(&device)?;
         let fix_screen_info = Framebuffer::get_fix_screeninfo(&device)?;
@@ -176,11 +176,9 @@ impl Framebuffer {
         let x = (self.var_screen_info.xres as usize - width) / 2;
         let y = (self.var_screen_info.yres as usize - height) * 4 / 5;
         let bytes_per_pixel = self.var_screen_info.bits_per_pixel as usize / 8;
-        let offset =
-            (y + self.var_screen_info.yoffset as usize) *
-            self.fix_screen_info.line_length as usize +
-            (x + self.var_screen_info.xoffset as usize) *
-            bytes_per_pixel;
+        let offset = (y + self.var_screen_info.yoffset as usize)
+            * self.fix_screen_info.line_length as usize
+            + (x + self.var_screen_info.xoffset as usize) * bytes_per_pixel;
         FbWriter {
             fb: self,
             offset: offset,
@@ -226,7 +224,7 @@ impl<'a> FbWriter<'a> {
         let mut offset = self.offset;
         let mut input = 0;
         for _ in 0..self.height {
-            self.fb.write(offset, &frame[input..input+self.width])?;
+            self.fb.write(offset, &frame[input..input + self.width])?;
             input += self.width;
             offset += self.fb.fix_screen_info.line_length as usize;
         }

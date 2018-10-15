@@ -3,10 +3,9 @@ extern crate libc;
 
 mod framebuffer;
 
-use std::{io, fmt, result, fs, thread, time};
-use std::io::Read;
-//use std::io::prelude::*;
 use flate2::read::ZlibDecoder;
+use std::io::Read;
+use std::{fmt, fs, io, result, thread, time};
 
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -54,20 +53,12 @@ fn read_u32<R: io::Read>(r: &mut R) -> Result<u32> {
     let buf = &mut [0, 0, 0, 0];
     r.read_exact(buf)?;
     Ok(
-        ((buf[3] as u32) << 24) + ((buf[2] as u32) << 16) + ((buf[1] as u32) << 8)
+        ((buf[3] as u32) << 24)
+            + ((buf[2] as u32) << 16)
+            + ((buf[1] as u32) << 8)
             + (buf[0] as u32),
     )
 }
-
-// fn read_u32_or_eof<R: io::Read>(r: &mut R) -> Result<Option<u32>> {
-//     match read_u32(r) {
-//         Ok(v) => Ok(Some(v)),
-//         Err(e) => match e.kind {
-//             ErrorKind::UnexpectedEof => Ok(None),
-//             _ => Err(e),
-//         },
-//     }
-// }
 
 fn main() {
     let mut animdata = fs::File::open("anim.bin").unwrap();
@@ -75,8 +66,8 @@ fn main() {
     let height = read_u32(&mut animdata).unwrap() as usize;
     let width = read_u32(&mut animdata).unwrap() as usize;
     let bpp = read_u32(&mut animdata).unwrap() as usize;
-    let frame_size = height*width*bpp;
-    let mut frames = vec![0; nframes*frame_size];
+    let frame_size = height * width * bpp;
+    let mut frames = vec![0; nframes * frame_size];
     let mut decoder = ZlibDecoder::new(animdata);
     decoder.read_exact(&mut frames).unwrap();
     assert_eq!(0, decoder.read(&mut [0]).unwrap());
@@ -86,7 +77,9 @@ fn main() {
     let dur = time::Duration::from_millis(1000 / 30);
     loop {
         for i in 0..nframes {
-            writer.write(&frames[i * frame_size..(i + 1) * frame_size]).unwrap();
+            writer
+                .write(&frames[i * frame_size..(i + 1) * frame_size])
+                .unwrap();
             thread::sleep(dur);
         }
     }
