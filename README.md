@@ -28,7 +28,7 @@ if your kernel is out of date or does not have this option, you should consider 
 
 5. `sudo systemctl enable fbspinner`
 
-6. Append to your kernel command line: `quiet loglevel=2 rd.udev.log_priority=2 rd.systemd.show_status=false systemd.show_status=false splash`
+6. Append to your kernel command line: `quiet loglevel=3 rd.udev.log_priority=3 rd.systemd.show_status=false systemd.show_status=false splash`
 
    If you use Intel graphics, also append `i915.fastboot=1`.
 
