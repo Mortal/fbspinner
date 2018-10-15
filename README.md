@@ -22,7 +22,7 @@ if your kernel is out of date or does not have this option, you should consider 
 
 2. `sudo cp target/release/fbspinner /usr/local/bin/`
 
-3. `sudo mkdir -p /usr/local/share/fbspinner && sudo cp anim.bin /usr/local/share/fbspinner/`
+3. `sudo mkdir -p /usr/local/share/fbspinner && sudo cp share/* /usr/local/share/fbspinner/`
 
 4. `sudo cp systemd/*.service /etc/systemd/system && sudo systemctl daemon-reload`
 
