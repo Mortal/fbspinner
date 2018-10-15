@@ -2,8 +2,8 @@
 # 291-174
 # 30 fps
 
-from imageio import imread, imwrite
 import numpy as np
+from imageio import imread, imwrite
 
 
 def main():
