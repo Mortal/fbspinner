@@ -24,7 +24,7 @@ if your kernel is out of date or does not have this option, you should consider 
 
 3. `sudo mkdir -p /usr/local/share/fbspinner && sudo cp anim.bin /usr/local/share/fbspinner/`
 
-4. `sudo cp fbspinner.service fbspinner-quit.service /etc/systemd/system && sudo systemctl daemon-reload`
+4. `sudo cp systemd/*.service /etc/systemd/system && sudo systemctl daemon-reload`
 
 5. `sudo systemctl enable fbspinner`
 
