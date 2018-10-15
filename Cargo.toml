@@ -2,6 +2,12 @@
 name = "fbspinner"
 version = "0.1.0"
 authors = ["Mathias Rav <m@git.strova.dk>"]
+description = "Show a spinner on the framebuffer during system boot"
+readme = "README.md"
+keywords = ["linux", "framebuffer"]
+categories = ["command-line-utilities"]
+license = "GPL-2.0-or-later"
+repository = "https://github.com/Mortal/fbspinner"
 
 [dependencies]
 flate2 = "1.0"
