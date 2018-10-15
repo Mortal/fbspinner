@@ -20,14 +20,16 @@ if your kernel is out of date or does not have this option, you should consider 
 
 1. Build fbspinner with `cargo build --release`
 
-2. `sudo mkdir -p /usr/local/share/fbspinner && sudo cp anim.bin /usr/local/share/fbspinner`
+2. `sudo cp target/release/fbspinner /usr/local/bin/`
 
-3. `sudo cp fbspinner.service fbspinner-quit.service /etc/systemd/system && sudo systemctl daemon-reload`
+3. `sudo mkdir -p /usr/local/share/fbspinner && sudo cp anim.bin /usr/local/share/fbspinner/`
 
-4. `sudo systemctl enable fbspinner`
+4. `sudo cp fbspinner.service fbspinner-quit.service /etc/systemd/system && sudo systemctl daemon-reload`
 
-5. Append to your kernel command line: `quiet loglevel=2 rd.udev.log_priority=2 rd.systemd.show_status=false systemd.show_status=false splash`
+5. `sudo systemctl enable fbspinner`
+
+6. Append to your kernel command line: `quiet loglevel=2 rd.udev.log_priority=2 rd.systemd.show_status=false systemd.show_status=false splash`
 
    If you use Intel graphics, also append `i915.fastboot=1`.
 
-6. Reboot!
+7. Reboot!
