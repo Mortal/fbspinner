@@ -37,4 +37,6 @@ if your kernel is out of date or does not have this option, you should consider 
 TODO
 ----
 
-Parse output of `FBIOGET_VSCREENINFO` properly to detect non-BGRA framebuffer.
+* Add `--help` and `--version`
+
+* Parse output of `FBIOGET_VSCREENINFO` properly to detect non-BGRA framebuffer. Maybe add `--check` to see if format is supported.
