@@ -39,4 +39,6 @@ TODO
 
 * Add `--help` and `--version`
 
+* Nicer error message for permission denied
+
 * Parse output of `FBIOGET_VSCREENINFO` properly to detect non-BGRA framebuffer. Maybe add `--check` to see if format is supported.
