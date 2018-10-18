@@ -1,8 +1,7 @@
+extern crate fbspinner;
 extern crate flate2;
-extern crate libc;
 
-mod framebuffer;
-
+use fbspinner::framebuffer;
 use flate2::read::ZlibDecoder;
 use std::io::Read;
 use std::{fmt, fs, io, result, thread, time};
@@ -17,6 +16,15 @@ pub enum ErrorKind {
 #[derive(Debug)]
 pub struct Error {
     kind: ErrorKind,
+}
+
+impl ::std::error::Error for Error {
+    fn cause(&self) -> Option<&::std::error::Error> {
+        match self.kind {
+            ErrorKind::Io(ref e) => Some(e),
+            _ => None,
+        }
+    }
 }
 
 pub type Result<T> = result::Result<T, Error>;
