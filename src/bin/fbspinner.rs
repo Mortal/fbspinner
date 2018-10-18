@@ -4,7 +4,7 @@ extern crate flate2;
 use fbspinner::framebuffer;
 use flate2::read::ZlibDecoder;
 use std::io::Read;
-use std::{fmt, fs, io, result, thread, time};
+use std::{fmt, fs, io, result};
 
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -106,14 +106,15 @@ fn main() {
         }
     };
 
-    let mut writer = fb.writer(width, height);
-    let dur = time::Duration::from_millis(1000 / 30);
-    loop {
-        for i in 0..nframes {
-            writer
-                .write(&frames[i * frame_size..(i + 1) * frame_size])
-                .unwrap();
-            thread::sleep(dur);
+    let mut i = 0;
+    fb.write_loop(width, height, |writer| {
+        writer
+            .write(&frames[i * frame_size..(i + 1) * frame_size])
+            .unwrap();
+        i += 1;
+        if i == nframes {
+            i = 0;
         }
-    }
+        None as Option<()>
+    });
 }

@@ -11,6 +11,7 @@ use std::io;
 use std::io::{Seek, Write};
 use std::os::unix::io::AsRawFd;
 use std::path::Path;
+use std::{thread, time};
 
 const FBIOGET_VSCREENINFO: libc::c_ulong = 0x4600;
 const FBIOGET_FSCREENINFO: libc::c_ulong = 0x4602;
@@ -215,6 +216,26 @@ impl Framebuffer {
                 "Ioctl returned -1",
             )),
             _ => Ok(info),
+        }
+    }
+
+    pub fn write_loop<R, F>(
+        &mut self,
+        width: usize,
+        height: usize,
+        mut render_frame: F,
+    ) -> Option<R>
+    where
+        F: FnMut(&mut FbWriter) -> Option<R>,
+    {
+        let mut writer = self.writer(width, height);
+        let dur = time::Duration::from_millis(1000 / 30);
+        loop {
+            match render_frame(&mut writer) {
+                Some(r) => return Some(r),
+                None => (),
+            };
+            thread::sleep(dur);
         }
     }
 }
