@@ -231,11 +231,15 @@ impl Framebuffer {
         let mut writer = self.writer(width, height);
         let dur = time::Duration::from_millis(1000 / 30);
         loop {
+            let next = time::Instant::now() + dur;
             match render_frame(&mut writer) {
                 Some(r) => return Some(r),
                 None => (),
             };
-            thread::sleep(dur);
+            let now = time::Instant::now();
+            if now < next {
+                thread::sleep(next - now);
+            }
         }
     }
 }
