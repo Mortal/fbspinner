@@ -18,15 +18,6 @@ pub struct Error {
     kind: ErrorKind,
 }
 
-impl ::std::error::Error for Error {
-    fn cause(&self) -> Option<&::std::error::Error> {
-        match self.kind {
-            ErrorKind::Io(ref e) => Some(e),
-            _ => None,
-        }
-    }
-}
-
 pub type Result<T> = result::Result<T, Error>;
 
 impl Into<Error> for ErrorKind {
