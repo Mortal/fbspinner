@@ -82,10 +82,15 @@ fn main() {
             y: 0.0,
             z: rot.cos(),
         };
+        let eye = Vertex {
+            x: rot.sin(),
+            y: 1.0,
+            z: rot.cos(),
+        };
 
         let z = (eye_dir.clone() - Vertex::center()).unit();
         let x = (Vertex::upward().cross(z.clone())).unit();
-        let y = z.clone().cross(x.clone());
+        let y = x.clone().cross(z.clone());
 
         {
             let mut target = ZBufferedTarget::new_row_major(xres, yres, &mut pixel, &mut zbuff);
@@ -96,7 +101,7 @@ fn main() {
                 x: x,
                 y: y,
                 z: z,
-                eye: eye_dir.clone(),
+                eye: eye.clone(),
             };
 
             obj.draw_shaded(&mut viewport, &shader);
