@@ -4,7 +4,7 @@ extern crate flate2;
 use fbspinner::framebuffer::{Framebuffer, FramebufferExt};
 use flate2::read::ZlibDecoder;
 use std::io::Read;
-use std::{fmt, fs, io, result};
+use std::{fmt, fs, io, process, result};
 
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -50,9 +50,7 @@ fn read_u32<R: io::Read>(r: &mut R) -> Result<u32> {
     let buf = &mut [0, 0, 0, 0];
     r.read_exact(buf)?;
     Ok(
-        ((buf[3] as u32) << 24)
-            + ((buf[2] as u32) << 16)
-            + ((buf[1] as u32) << 8)
+        ((buf[3] as u32) << 24) + ((buf[2] as u32) << 16) + ((buf[1] as u32) << 8)
             + (buf[0] as u32),
     )
 }
@@ -72,30 +70,30 @@ fn read_frames(mut animdata: fs::File) -> Result<(usize, usize, usize, Vec<u8>, 
     Ok((nframes, height, width, frames, frame_size))
 }
 
+macro_rules! unwrap_or_exit {
+    ( $x:expr, $msg:expr ) => {
+        match $x {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!($msg, e);
+                process::exit(1);
+            }
+        }
+    }
+}
+
 fn main() {
-    let animdata = match fs::File::open("anim.bin") {
-        Ok(f) => f,
-        Err(e) => {
-            println!("Could not open anim.bin ({})", e);
-            return;
-        }
-    };
+    let animdata = unwrap_or_exit!(fs::File::open("anim.bin"), "Could not open anim.bin ({})");
 
-    let (nframes, height, width, frames, frame_size) = match read_frames(animdata) {
-        Ok(x) => x,
-        Err(e) => {
-            println!("anim.bin is in the wrong format ({})", e);
-            return;
-        }
-    };
+    let (nframes, height, width, frames, frame_size) = unwrap_or_exit!(
+        read_frames(animdata),
+        "anim.bin is in the wrong format ({})"
+    );
 
-    let mut fb = match Framebuffer::new("/dev/fb0") {
-        Ok(fb) => fb,
-        Err(e) => {
-            println!("Could not open /dev/fb0 ({})", e);
-            return;
-        }
-    };
+    let mut fb = unwrap_or_exit!(
+        Framebuffer::new("/dev/fb0"),
+        "Could not open /dev/fb0 ({})"
+    );
 
     let mut i = 0;
     fb.write_loop(width, height, |writer| {
