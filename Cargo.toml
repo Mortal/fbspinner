@@ -13,3 +13,6 @@ repository = "https://github.com/Mortal/fbspinner"
 flate2 = "1.0"
 libc = "0.2"
 framebuffer = "0.2.0"
+
+[profile.release]
+panic = "abort"
