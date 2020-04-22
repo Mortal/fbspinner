@@ -5,7 +5,7 @@ extern crate gel;
 
 use gel::obj::Obj;
 use gel::{ZBufferedTarget, Viewport, Vertex, Pixels, TextureShader};
-use fbspinner::framebuffer;
+use fbspinner::framebuffer::{Framebuffer, FramebufferExt};
 use std::env;
 
 struct BmpPixels {
@@ -57,7 +57,7 @@ fn main() {
         height: image_height,
     };
 
-    let mut fb = match framebuffer::Framebuffer::new("/dev/fb0") {
+    let mut fb = match Framebuffer::new("/dev/fb0") {
         Ok(fb) => fb,
         Err(e) => {
             println!("Could not open /dev/fb0 ({})", e);

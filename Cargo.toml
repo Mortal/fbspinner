@@ -12,5 +12,5 @@ repository = "https://github.com/Mortal/fbspinner"
 [dependencies]
 flate2 = "1.0"
 libc = "0.2"
-gel = {path = "../gel"}
 bmp = "*"
+framebuffer = "0.2.0"
