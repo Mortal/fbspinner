@@ -1,6 +1,6 @@
 [package]
 name = "fbspinner"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Mathias Rav <m@git.strova.dk>"]
 description = "Show a spinner on the framebuffer during system boot"
 readme = "README.md"

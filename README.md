@@ -15,7 +15,7 @@ Since fbspinner is written in Rust, you need to install [Rust and Cargo](https:/
 
 Your kernel should be compiled with `CONFIG_FRAMEBUFFER_CONSOLE_DEFERRED_TAKEOVER=y` to retain the vendor logo during kernel boot.
 Check this with `zgrep FRAMEBUFFER_CONSOLE /proc/config.gz`.
-Note that the config option was added recently in Linux 4.19 (released on October 21, 2018);
+The config option was added in Linux 4.19, so
 if your kernel is out of date or does not have this option, you should consider compiling a kernel with the option.
 
 1. Build fbspinner with `cargo build --release`
