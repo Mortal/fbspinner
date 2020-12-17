@@ -34,6 +34,24 @@ if your kernel is out of date or does not have this option, you should consider 
 
 7. Reboot!
 
+
+How to make custom anim.bin
+---------------------------
+
+> Make sure you have python3 and pip installed.
+> Also ensure that you have required python modules,
+> if you don't then run the following command: `pip3 install imageio`
+
+* Put your png frames at `anim` dir.
+
+* While being in the `fbspinner` dir run the following command:
+```
+python3 scripts/flatten.py
+```
+
+* You should find the output as `share/anim.bin`
+
+
 TODO
 ----
 
