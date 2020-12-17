@@ -8,10 +8,10 @@ from imageio import imread
 
 def main():
     images = np.array(
-        [flatten(imread(path)) for path in sorted(glob.glob("anim/frame*.png"))]
+        [flatten(imread(path)) for path in sorted(glob.glob("anim/*.png"))]
     )
     n, h, w, d = images.shape
-    with open("anim.bin", "wb") as fp:
+    with open("share/anim.bin", "wb") as fp:
         fp.write(struct.pack("iiii", n, h, w, d))
         fp.write(zlib.compress(images.ravel().tobytes()))
 
@@ -20,6 +20,8 @@ def flatten(im):
     if im.ndim == 2:
         im = im[:, :, np.newaxis]
         im = im[:, :, [0, 0, 0]]
+    elif im.shape[2] > 3:
+        im = im[:, :, :3]
     height, width, bpp = im.shape
     assert bpp == 3
     im = im[:, :, ::-1]
